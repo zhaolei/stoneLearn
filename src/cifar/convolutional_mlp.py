@@ -43,6 +43,8 @@ from mlp import HiddenLayer
 import mstone
 import time
 
+import loadcifar
+
 
 class LeNetConvPoolLayer(object):
     """Pool Layer of a convolutional network """
@@ -173,7 +175,7 @@ def evaluate_lenet5(learning_rate=0.1, n_epochs=200,
     # Reshape matrix of rasterized images of shape (batch_size, 28 * 28)
     # to a 4D tensor, compatible with our LeNetConvPoolLayer
     # (28, 28) is the size of MNIST images.
-    layer0_input = x.reshape((batch_size, 1, 28, 28))
+    layer0_input = x.reshape((batch_size, 1, 32, 32))
 
     # Construct the first convolutional pooling layer:
     # filtering reduces the image size to (28-5+1 , 28-5+1) = (24, 24)
@@ -182,7 +184,7 @@ def evaluate_lenet5(learning_rate=0.1, n_epochs=200,
     layer0 = LeNetConvPoolLayer(
         rng,
         input=layer0_input,
-        image_shape=(batch_size, 1, 28, 28),
+        image_shape=(batch_size, 1, 32, 32),
         filter_shape=(nkerns[0], 1, 5, 5),
         poolsize=(2, 2)
     )
@@ -194,7 +196,7 @@ def evaluate_lenet5(learning_rate=0.1, n_epochs=200,
     layer1 = LeNetConvPoolLayer(
         rng,
         input=layer0.output,
-        image_shape=(batch_size, nkerns[0], 12, 12),
+        image_shape=(batch_size, nkerns[0], 14, 14),
         filter_shape=(nkerns[1], nkerns[0], 5, 5),
         poolsize=(2, 2)
     )
@@ -209,7 +211,7 @@ def evaluate_lenet5(learning_rate=0.1, n_epochs=200,
     layer2 = HiddenLayer(
         rng,
         input=layer2_input,
-        n_in=nkerns[1] * 4 * 4,
+        n_in=nkerns[1] * 5 * 5,
         n_out=500,
         activation=T.tanh
     )
@@ -280,7 +282,7 @@ def evaluate_lenet5(learning_rate=0.1, n_epochs=200,
     ###############
     print('... training')
     # early-stopping parameters
-    patience = 10000  # look as this many examples regardless
+    patience = 100000  # look as this many examples regardless
     patience_increase = 2  # wait this much longer when a new best is
                            # found
     improvement_threshold = 0.995  # a relative improvement of this much is
@@ -345,7 +347,7 @@ def evaluate_lenet5(learning_rate=0.1, n_epochs=200,
 
                     y_r = predict_model(12)
                     
-                    with open('%s/save_model.pkl'%mstone.theano_path, 'w') as f:
+                    with open('%s/save_model_cifar.pkl'%mstone.theano_path, 'w') as f:
                         cPickle.dump([layer0_input, layer0, layer1, layer2_input, layer2, layer3], f)
 
             if patience <= iter:
@@ -362,7 +364,10 @@ def evaluate_lenet5(learning_rate=0.1, n_epochs=200,
            ' ran for %.2fm' % ((end_time - start_time) / 60.)), file=sys.stderr)
 
 if __name__ == '__main__':
-    evaluate_lenet5()
+    #evaluate_lenet5()
+    evaluate_lenet5(learning_rate=0.06, n_epochs=1000,
+                    dataset='/ds/datas/mnist.pkl.gz',
+                    nkerns=[20, 40], batch_size=600)
 
 
 def experiment(state, channel):

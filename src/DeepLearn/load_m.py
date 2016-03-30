@@ -16,6 +16,7 @@ from convolutional_mlp import LeNetConvPoolLayer
 from mlp import HiddenLayer
 
 import mstone
+import pylab
 
 
 layer0 = pickle.load(open('%s/best_model_cnn_l0.pkl'%mstone.theano_path))
@@ -38,10 +39,6 @@ layer2_model = theano.function(
 
 layer3_model = theano.function(
     inputs=[layer3.input],
-    outputs=layer3.y_pred)
-
-layerx_model = theano.function(
-    inputs=[layer0.input],
     outputs=layer3.y_pred)
 
 '''
@@ -87,12 +84,35 @@ input_test = trainv_set_x[20].reshape((1,1,28,28))
 print input_test.shape
 #predicted_values = predict_model(test_set_x[:10])
 #print(predicted_values)
-'''
+pylab.gray()
+#pylab.imshow(input_test[0][0])
+#pylab.show()
 data_l0 = layer0_model(input_test)
 print data_l0.shape
+'''
+pylab.subplot(1, 4, 1);
+pylab.imshow(input_test[0][0])
+pylab.subplot(1, 4, 2);
+pylab.imshow(data_l0[0][0])
+pylab.subplot(1, 4, 3);
+pylab.imshow(data_l0[0][1])
+pylab.subplot(1, 4, 4);
+pylab.imshow(data_l0[0][8])
+pylab.show()
+'''
 data_l1 = layer1_model(data_l0)
 print data_l1.shape
+pylab.subplot(1, 4, 1);
+pylab.imshow(input_test[0][0])
+pylab.subplot(1, 4, 2);
+pylab.imshow(data_l1[0][0])
+pylab.subplot(1, 4, 3);
+pylab.imshow(data_l1[0][1])
+pylab.subplot(1, 4, 4);
+pylab.imshow(data_l1[0][8])
+pylab.show()
 
+exit()
 data_l2_in = data_l1.flatten(2)
 data_l2_in = data_l2_in.reshape(1,800)
 print data_l2_in.shape
@@ -110,7 +130,6 @@ print sy[20]
 #print sok==data_l3
 
 #print data_l1.shape
-'''
 
 '''
 index = T.lscalar()

@@ -26,7 +26,8 @@ def evaluate(actual, pred):
     print 'recall:{0:0.3f}'.format(m_recall)
 
 
-model = '%s/save_model.pkl'%mstone.theano_path
+#model = '%s/save_model.pkl'%mstone.theano_path
+model = '%s/save_model_40_60.pkl'%mstone.theano_path
 testset = '/ds/datas/mnist.pkl.gz'
 batch_size = 1000
       # Load the saved model.

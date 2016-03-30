@@ -298,3 +298,6 @@ def speed():
         print >> sys.stderr, 'speed_failure_gpu=' + str(err)
 
         assert not numpy.isnan(gpu_times).any()
+
+if __name__ == '__main__':
+    speed()
