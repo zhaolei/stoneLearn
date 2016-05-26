@@ -10,7 +10,7 @@ data_dir_cifar10 = os.path.join(data_dir, "cifar-10-batches-py")
 data_dir_cifar100 = os.path.join(data_dir, "cifar-100-python")  
   
 class_names_cifar10 = np.load(os.path.join(data_dir_cifar10, "batches.meta"))  
-#class_names_cifar100 = np.load(os.path.join(data_dir_cifar100, "meta"))  
+class_names_cifar100 = np.load(os.path.join(data_dir_cifar100, "meta"))  
   
   
 def one_hot(x, n):  
@@ -90,28 +90,35 @@ def cifar100(dtype='float64', grayscale=True):
     x_train, t_train = _load_batch_cifar100("train", dtype=dtype)  
     x_test, t_test = _load_batch_cifar100("test", dtype=dtype)  
   
+    t_test = _tolabelx(t_test)
+    t_train = _tolabelx(t_train)
     if grayscale:  
         x_train = _grayscale(x_train)  
         x_test = _grayscale(x_test)  
   
-    return x_train, t_train, x_test, t_test  
+    return x_train, t_train, x_test, t_test, x_test, t_test  
   
-#Xtrain, Ytrain, Xtest, Ytest = cifar10()  
+Xtrain, Ytrain, Xtest, Ytest, xvalid, yvalid = cifar100()  
+#Xtrain, Ytrain, Xtest, Ytest, Xvalid, Yvalid = cifar10()  
+print Ytrain[0]
+print len(Ytest)
+
 ################################################  
-  
-  
 '''
+print Xtest[0].shape
+  
+  
 image = Xtrain[0].reshape(32, 32)  
 image1 = Xtrain[255].reshape(32, 32)  
   
 fig = plt.figure()  
 ax = fig.add_subplot(121)  
 plt.axis('off')  
-plt.title(class_names_cifar10['label_names'][list(Ytrain[0]).index(1)])  
+#plt.title(class_names_cifar10['label_names'][list(Ytrain[0]).index(1)])  
 plt.imshow(image, cmap='gray')  
   
 ax = fig.add_subplot(122)  
-plt.title(class_names_cifar10['label_names'][list(Ytrain[255]).index(1)])  
+#plt.title(class_names_cifar10['label_names'][list(Ytrain[255]).index(1)])  
 plt.imshow(image1, cmap='gray')  
 plt.axis('off')  
 plt.show() 

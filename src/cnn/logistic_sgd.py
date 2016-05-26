@@ -48,8 +48,6 @@ import numpy
 import theano
 import theano.tensor as T
 
-import loadcifar
-
 
 class LogisticRegression(object):
     """Multi-class Logistic Regression Class
@@ -185,9 +183,41 @@ def load_data(dataset):
     # LOAD DATA #
     #############
 
+    # Download the MNIST dataset if it is not present
+    data_dir, data_file = os.path.split(dataset)
+    if data_dir == "" and not os.path.isfile(dataset):
+        # Check if dataset is in the data directory.
+        new_path = os.path.join(
+            os.path.split(__file__)[0],
+            "..",
+            "data",
+            dataset
+        )
+        if os.path.isfile(new_path) or data_file == 'mnist.pkl.gz':
+            dataset = new_path
 
-    #train_setx,train_sety,test_setx,test_sety, valid_setx, valid_sety = loadcifar.cifar10()
-    train_setx,train_sety,test_setx,test_sety, valid_setx, valid_sety = loadcifar.cifar100()
+    if (not os.path.isfile(dataset)) and data_file == 'mnist.pkl.gz':
+        from six.moves import urllib
+        origin = (
+            'http://www.iro.umontreal.ca/~lisa/deep/data/mnist/mnist.pkl.gz'
+        )
+        print('Downloading data from %s' % origin)
+        urllib.request.urlretrieve(origin, dataset)
+
+    print('... loading data')
+
+    # Load the dataset
+    with gzip.open(dataset, 'rb') as f:
+        try:
+            train_set, valid_set, test_set = pickle.load(f, encoding='latin1')
+        except:
+            train_set, valid_set, test_set = pickle.load(f)
+    # train_set, valid_set, test_set format: tuple(input, target)
+    # input is a numpy.ndarray of 2 dimensions (a matrix)
+    # where each row corresponds to an example. target is a
+    # numpy.ndarray of 1 dimension (vector) that has the same length as
+    # the number of rows in the input. It should give the target
+    # to the example with the same index in the input.
 
     def shared_dataset(data_xy, borrow=True):
         """ Function that loads the dataset into shared variables
@@ -205,7 +235,6 @@ def load_data(dataset):
         shared_y = theano.shared(numpy.asarray(data_y,
                                                dtype=theano.config.floatX),
                                  borrow=borrow)
-
         # When storing data on the GPU it has to be stored as floats
         # therefore we will store the labels as ``floatX`` as well
         # (``shared_y`` does exactly that). But during our computations
@@ -215,9 +244,9 @@ def load_data(dataset):
         # lets ous get around this issue
         return shared_x, T.cast(shared_y, 'int32')
 
-    test_set_x, test_set_y = shared_dataset((test_setx,test_sety))
-    valid_set_x, valid_set_y = shared_dataset((valid_setx,valid_sety))
-    train_set_x, train_set_y = shared_dataset((train_setx,train_sety))
+    test_set_x, test_set_y = shared_dataset(test_set)
+    valid_set_x, valid_set_y = shared_dataset(valid_set)
+    train_set_x, train_set_y = shared_dataset(train_set)
 
     rval = [(train_set_x, train_set_y), (valid_set_x, valid_set_y),
             (test_set_x, test_set_y)]
@@ -252,10 +281,6 @@ def sgd_optimization_mnist(learning_rate=0.13, n_epochs=1000,
     test_set_x, test_set_y = datasets[2]
 
     # compute number of minibatches for training, validation and testing
-    print (train_set_x.get_value().shape)
-    #print (train_set_y.get_value().shape)
-    print (test_set_x.get_value().shape)
-    #print (test_set_y.get_value().shape)
     n_train_batches = train_set_x.get_value(borrow=True).shape[0] // batch_size
     n_valid_batches = valid_set_x.get_value(borrow=True).shape[0] // batch_size
     n_test_batches = test_set_x.get_value(borrow=True).shape[0] // batch_size
@@ -275,8 +300,7 @@ def sgd_optimization_mnist(learning_rate=0.13, n_epochs=1000,
 
     # construct the logistic regression class
     # Each MNIST image has size 28*28
-    #classifier = LogisticRegression(input=x, n_in=28 * 28, n_out=10)
-    classifier = LogisticRegression(input=x, n_in=32 * 32, n_out=10)
+    classifier = LogisticRegression(input=x, n_in=28 * 28, n_out=10)
 
     # the cost we minimize during training is the negative log likelihood of
     # the model in symbolic format
@@ -400,7 +424,7 @@ def sgd_optimization_mnist(learning_rate=0.13, n_epochs=1000,
                     )
 
                     # save the best model
-                    with open('best_model_c.pkl', 'wb') as f:
+                    with open('best_model.pkl', 'wb') as f:
                         pickle.dump(classifier, f)
 
             if patience <= iter:
