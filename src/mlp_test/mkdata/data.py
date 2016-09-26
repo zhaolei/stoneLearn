@@ -3,7 +3,7 @@ import pylab
 import mstone
 import csv
 
-data_0 = make_moons(150000, noise=0.4)
+data_0 = make_moons(150000, noise=0.1)
 
 xdx = csv.writer(open('%s/moon_data_x.csv'%mstone.data_path, 'w'))
 xlab = csv.writer(open('%s/moon_data_y.csv'%mstone.data_path, 'w'))

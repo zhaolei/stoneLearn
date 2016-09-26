@@ -20,12 +20,12 @@ import random
 import mstone
 import csv
 
-fname = "%s/moon_data_x.csv"%mstone.data_path
+fname = "%s/nd_data_x.csv"%mstone.data_path
 reader=csv.reader(open(fname,"r"),delimiter=',')
 xdata=list(reader)
 #xdata=np.array(x).astype('float')
 
-fname = "%s/moon_data_y.csv"%mstone.data_path
+fname = "%s/nd_data_y.csv"%mstone.data_path
 reader=csv.reader(open(fname,"r"),delimiter=',')
 ydata=list(reader)
 ydata=np.array(ydata).astype('int32')
@@ -86,7 +86,7 @@ Y_test = np_utils.to_categorical(Y_test, nb_classes)
 
 
 model = Sequential()
-model.add(Dense(512, input_shape=(2,)))
+model.add(Dense(512, input_shape=(4,)))
 model.add(Activation('relu'))
 model.add(Dropout(0.2))
 model.add(Dense(512))
