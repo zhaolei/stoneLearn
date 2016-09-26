@@ -27,12 +27,13 @@ def evaluate(actual, pred):
 
 
 #model = '%s/save_model.pkl'%mstone.theano_path
-model = '%s/save_model_40_60.pkl'%mstone.theano_path
+#model = '/ds/model/cifar100/best_model_c.pkl'
+model = '%s/save_model_cifar100.pkl'%mstone.theano_path
 testset = '/ds/datas/mnist.pkl.gz'
 batch_size = 1000
-      # Load the saved model.
 #classifiers = cPickle.load(gzip.open(model))
 classifiers = cPickle.load(open(model))
+print type(classifiers[0]) 
 
       # Pick out the individual layer
 layer0_input = classifiers[0]
@@ -44,7 +45,7 @@ layer3 = classifiers[5]
 
 # Apply it to our test set
 testsets = load_data(testset)
-test_set_x,test_set_y = testsets[1]
+test_set_x,test_set_y = testsets[2]
 #test_set_x = testsets.get_value()
 test_set_x = test_set_x.get_value()
 
@@ -57,13 +58,17 @@ predict_model = theano.function(
 )
 
 print test_set_x.shape
+print type(test_set_x)
 ix = 5 
 #predicted_values = predict_model(
 #    test_set_x[ix * batch_size:(ix + 1) * batch_size].reshape((batch_size, 1, 28, 28))
 #)
 
+#
+testt = test_set_x[:600]
 predicted_values = predict_model(
-    test_set_x.reshape((test_set_x.shape[0], 1, 28, 28))
+    #test_set_x.reshape((test_set_x.shape[0], 1, 32, 32))
+    testt.reshape((testt.shape[0], 1, 32, 32))
 )
 
 #print('Prediction complete.')
@@ -72,5 +77,8 @@ test_y = test_set_y.owner.inputs[0].owner.inputs[0].get_value()
 #print dir(test_set_y.owner.inputs[0].get_value)
 #or_y = numpy.asarray(test_y[ix * batch_size:(ix + 1)*batch_size],dtype='int32')
 or_y = numpy.asarray(test_y, dtype='int32')
+yy = or_y[:600]
+print predicted_values
+print yy 
 
-evaluate(or_y, predicted_values)
+evaluate(yy, predicted_values)

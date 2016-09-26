@@ -1,6 +1,7 @@
 import numpy as np  
 import os  
 import cPickle as pickle  
+#import pickle   
 import glob  
 import matplotlib.pyplot as plt  
 import mstone
@@ -41,7 +42,7 @@ def cifar10(dtype='float64', grayscale=True):
     # train  
     x_train = []  
     t_train = []  
-    for k in xrange(5):  
+    for k in range(5):  
         x, t = _load_batch_cifar10("data_batch_%d" % (k + 1), dtype=dtype)  
         x_train.append(x)  
         t_train.append(t)  
@@ -95,13 +96,21 @@ def cifar100(dtype='float64', grayscale=True):
     if grayscale:  
         x_train = _grayscale(x_train)  
         x_test = _grayscale(x_test)  
+
+    t_valid = t_train[-10000:]
+    t_train = t_train[:-10000]
+
+    x_valid = x_train[-10000:]
+    x_train = x_train[:-10000]
   
-    return x_train, t_train, x_test, t_test, x_test, t_test  
+    return x_train, t_train, x_test, t_test, x_valid, t_valid
   
-Xtrain, Ytrain, Xtest, Ytest, xvalid, yvalid = cifar100()  
-#Xtrain, Ytrain, Xtest, Ytest, Xvalid, Yvalid = cifar10()  
-print Ytrain[0]
-print len(Ytest)
+#Xtrain, Ytrain, Xtest, Ytest, xvalid, yvalid = cifar100()  
+Xtrain, Ytrain, Xtest, Ytest, Xvalid, Yvalid = cifar10()  
+print(Ytrain[0])
+print(len(Ytest))
+print(Xtrain[0])
+print(len(Xtrain[0]))
 
 ################################################  
 '''

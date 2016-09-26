@@ -49,6 +49,7 @@ import theano
 import theano.tensor as T
 
 import loadcifar
+import mstone
 
 
 class LogisticRegression(object):
@@ -400,7 +401,7 @@ def sgd_optimization_mnist(learning_rate=0.13, n_epochs=1000,
                     )
 
                     # save the best model
-                    with open('best_model_c.pkl', 'wb') as f:
+                    with open('/ds/model/cifar100/best_model_c.pkl', 'wb') as f:
                         pickle.dump(classifier, f)
 
             if patience <= iter:

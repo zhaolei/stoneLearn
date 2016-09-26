@@ -43,8 +43,6 @@ from mlp import HiddenLayer
 import mstone
 import time
 
-import loadcifar
-
 
 class LeNetConvPoolLayer(object):
     """Pool Layer of a convolutional network """
@@ -101,7 +99,7 @@ class LeNetConvPoolLayer(object):
             input=input,
             filters=self.W,
             filter_shape=filter_shape,
-            image_shape=image_shape
+            input_shape=image_shape
         )
 
         # downsample each feature map individually, using maxpooling
@@ -217,7 +215,7 @@ def evaluate_lenet5(learning_rate=0.1, n_epochs=200,
     )
 
     # classify the values of the fully-connected sigmoidal layer
-    layer3 = LogisticRegression(input=layer2.output, n_in=500, n_out=10)
+    layer3 = LogisticRegression(input=layer2.output, n_in=500, n_out=100)
 
     # the cost we minimize during training is the NLL of the model
     cost = layer3.negative_log_likelihood(y)
@@ -347,7 +345,7 @@ def evaluate_lenet5(learning_rate=0.1, n_epochs=200,
 
                     y_r = predict_model(12)
                     
-                    with open('%s/save_model_cifar.pkl'%mstone.theano_path, 'w') as f:
+                    with open('%s/save_model_cifar100.pkl'%mstone.theano_path, 'w') as f:
                         cPickle.dump([layer0_input, layer0, layer1, layer2_input, layer2, layer3], f)
 
             if patience <= iter:
@@ -365,15 +363,24 @@ def evaluate_lenet5(learning_rate=0.1, n_epochs=200,
 
 if __name__ == '__main__':
     #evaluate_lenet5()
-    print(sys.argv)
-    lr = float(sys.argv[1])
-    ne = int(sys.argv[2])
-    nk1 = int(sys.argv[3])
-    nk2 = int(sys.argv[4])
-    bs = int(sys.argv[5])
-    evaluate_lenet5(learning_rate=lr, n_epochs=ne,
+    argv = []
+    argv.append({'lr':0.01, 'ne':1200, 'nk':[80, 100], 'bs':200})
+    argv.append({'lr':0.01, 'ne':1200, 'nk':[80, 120], 'bs':400})
+    argv.append({'lr':0.01, 'ne':1200, 'nk':[100, 160], 'bs':200})
+    argv.append({'lr':0.01, 'ne':1200, 'nk':[100, 160], 'bs':400})
+    argv.append({'lr':0.01, 'ne':1200, 'nk':[120, 160], 'bs':400})
+    argv.append({'lr':0.01, 'ne':1000, 'nk':[180, 220], 'bs':400})
+    
+    i = 0
+    if len(sys.argv) > 1:
+        i = int(sys.argv[1])
+    av = argv[i]
+    print('cnn_argv:')
+    print(av)
+        
+    evaluate_lenet5(learning_rate=av['lr'], n_epochs=av['ne'],
                     dataset='/ds/datas/mnist.pkl.gz',
-                    nkerns=[nk1, nk2], batch_size=bs)
+                    nkerns=av['nk'], batch_size=av['bs'])
 
 
 def experiment(state, channel):
