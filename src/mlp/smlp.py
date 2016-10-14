@@ -34,7 +34,7 @@ class Smlp:
 
     deltaLayers = []
 
-    def __init__(self, inX=1, inY=1, outY=1):
+    def __init__(self, inX=1, inY=1, outY=1, batch=20):
         self.inX = inX
         self.inY = inY
         self.outY = outY
@@ -72,13 +72,19 @@ class Smlp:
             j = 0
             while j+self.batch < len(tdata): 
                 #self.train(tdata, tlab)
+                # 数据分片
                 tmpX = tdata[j:j+self.batch]
                 tmpY = tlab[j:j+self.batch]
 
+                # 前向计算误差
                 self.train_forward(tmpX, tmpY)
-                if i % 30 == 0:
-                    self.get_err(tmpX, tmpY)
+                if (j==0) and (i % 30 == 0):
+                    self.get_err(tmpX, tmpY, i)
+
+                # 误差反向 计算
                 self.train_delta(tmpX, tmpY)
+                
+                # 更新参数
                 self.train_param(tmpX, tmpY)
                 j += self.batch
             
@@ -116,9 +122,9 @@ class Smlp:
             self.paramLayers.insert(0,lp)
     
     '''计算误差'''
-    def get_err(self, tdata, tlab):
+    def get_err(self, tdata, tlab, i):
         lx_err = tlab - self.levelLayers[-1]
-        print "Error:[0]" + str(np.mean(np.abs(lx_err)))
+        print "Error batch[%d] lost: %f"%(i , np.mean(np.abs(lx_err)))
         
 
     def train(self, tdata, tlab):
