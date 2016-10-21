@@ -5,15 +5,16 @@ TODO
 1. 输入检查
 2. 自动初始化
 3. batch 批量梯度 
-4. 自定义激活函数
-5. 支持 输出层softmax 包括softmax误差
+4. 自定义激活函数 ****
+5. 支持 输出层softmax 包括softmax误差 ****
 6. 单层自定义
-7. 增加单层偏置 b
+7. 增加单层偏置 b ****
 '''
 
 import numpy as np
 from numpy import genfromtxt
 import mstone
+import math
 
 class ActFun:
     
@@ -41,7 +42,8 @@ class ActFun:
             dloss = dx.dot(y.T)
             return dx, dloss 
  
-        return 1/(1+np.exp(-x))
+        tmp = 1/(1+np.exp(-x))
+        return tmp
 
     def softmax(self, x, y=None, lerr=None, deriv=False):
 
@@ -88,7 +90,8 @@ class Smlp:
     deltaLayers = []
     
     actFunctions = [] 
-    actDxFunctions = [] 
+
+    setConfig = []
 
     def __init__(self, inX=1, inY=1, outY=1, batch=20):
         self.inX = inX
@@ -98,40 +101,38 @@ class Smlp:
         self.actObj = ActFun()
         
     def addLayer(self, intX=1, intY=1, act='sigmod'):
-        self.hideLayers.append((intX,intY))
+        #self.hideLayers.append((intX,intY))
         #self.actFunctions.append(self.nonlinx)
-        self.actFunctions.append(self.actObj.func(act))
+        #self.actFunctions.append(self.actObj.func(act))
         #self.actDxFunctions.append(self.actObj.dx_func('dx_%s'%act))
+        conf = {}
+        conf['x'] = intX
+        conf['y'] = intY
+        conf['actFun'] = act 
+        self.setConfig.append(conf)
 
     def setOut(self,intOut):
         self.outputLayer.append((intOut))
  
 
+    '''参数初始化'''
     def initLayer(self):
 
-        for shx in self.hideLayers :
-            #syns = 2*np.random.random((shx[0],shx[1])) - 1
-            syns = np.random.random((shx[0],shx[1]))/np.sqrt(shx[0]) 
+        #for shx in self.hideLayers :
+        for val in self.setConfig :
+            syns = {}
+            syns['W'] = np.random.random((val['x'],val['y']))/np.sqrt(val['x']) 
+            syns['b'] = np.zeros((1,val['y'])) 
+            syns['act'] =  self.actObj.func(val['actFun'])
+            #syns = np.random.random((shx[0],shx[1]))/np.sqrt(shx[0]) 
             self.paramLayers.append(syns)
-
-    def nonlin(self,x,deriv=False):
-
-        if(deriv==True):
-            return x*(1-x)
- 
-        return 1/(1+np.exp(-x))
-
 
     
     def printParam(self):
         print('input:')
         print self.inputLayer
-        print('hide')
-        print self.hideLayers
         #print('param')
         #print self.paramLayers
-        print('func')
-        print(self.actFunctions)
 
     def mtrain(self, tdata, tlab):
         for i in range(self.epochs):
@@ -142,12 +143,10 @@ class Smlp:
                 tmpX = tdata[j:j+self.batch]
                 tmpY = tlab[j:j+self.batch]
 
+                #print '************ %d'%j
                 # 前向计算误差
                 self.train_forward(tmpX, tmpY)
-                #self.get_softmax_err(tmpX,tmpY, j)
                 if j==0 :
-                    #self.get_err(tmpX, tmpY, i)
-                    #self.get_softmax_err(tmpX,tmpY, i)
                     self.calculate(tmpX,tmpY, i)
 
                 # 误差反向 计算
@@ -164,19 +163,17 @@ class Smlp:
         trainX = tdata
         self.levelLayers = []
         self.levelLayers.append(trainX)
-        for (shx, actF) in zip(self.paramLayers, self.actFunctions):
-            #lx = self.nonlin(np.dot(trainX, shx), deriv=False)
-            lx = actF(np.dot(trainX, shx), deriv=False)
+        for shx in self.paramLayers:
+            #actX = self.actObj.getFun(shx['act'])
+            #lx = actF(np.dot(trainX, shx['W']) + shx['b'], deriv=False)
+            lx = shx['act'](np.dot(trainX, shx['W']) + shx['b'], deriv=False)
+            #lx = actF(np.dot(trainX, shx['W']), deriv=False)
             #lx = self.sigmod(np.dot(trainX, shx), deriv=False)
             self.levelLayers.append(lx)
             trainX = lx
+
         return lx
 
-    def train_outlayer(self, tdata, tlab, x):
-        return x
-
-    def train_hidelayer(self, tdata, tlab, x):
-        return x
 
     '''梯度计算'''
     def train_delta(self, tdata, tlab, x): 
@@ -184,30 +181,10 @@ class Smlp:
         self.deltaLayers = []
         #lx_err = tlab - self.levelLayers[-1]
         lx_err = tlab 
-        for (shx,shxs,actF) in zip(self.levelLayers[::-1], self.paramLayers[::-1], self.actFunctions[::-1]):
-            #lx_delta,lx_err = lx_err*actF(x=shx, y=shxs)
-            #lx_delta = lx_err*self.nonlin(shx, deriv=True)
-            #lx_delta, lx_err= self.dx_sigmod(shx, shxs, lx_err)
-            #lx_delta, lx_err= actF(shx, shxs, lx_err, deriv=True)
-            
-            lx_delta, lx_err= actF(shx, shxs, lx_err, deriv=True)
-            '''
-            print 'xxxx %d' % x
-            print lx_delta
-            print lx_err
-            exit()
-            if x > 0:
-                exit()
-            if lx_delta[0][0] > 0 or (lx_delta[0][0] * -1) > 0:
-                print ''
-            else:
-                print '00000:0000 : %d'%x
-                #print lx_delta[0]
-            '''
-            #lx_err = lx_delta.dot(shxs.T)
+        for (shx,shxs) in zip(self.levelLayers[::-1], self.paramLayers[::-1]):
+            #lx_delta, lx_err= actF(shx, shxs['W'], lx_err, deriv=True)
+            lx_delta, lx_err= shxs['act'](shx, shxs['W'], lx_err, deriv=True)
             self.deltaLayers.append(lx_delta)
-
-    
 
     
     '''参数更新'''
@@ -220,7 +197,9 @@ class Smlp:
             lx = self.levelLayers.pop()     
             
             ll = lx.T.dot(lx_delta)
-            lp += -1 * lx.T.dot(lx_delta)
+            lp['W'] += -1 * lx.T.dot(lx_delta)
+            lp['b'] += -1 * np.sum(lx_delta, axis=0)
+            
             self.paramLayers.insert(0,lp)
     
     '''计算误差'''
@@ -258,59 +237,6 @@ class Smlp:
         lost = self.get_softmax_lost(plab, tlab) 
             
         print "Error batch[%d] lost: %f"%(i , lost)
-        
-
-    def train(self, tdata, tlab):
-        
-        trainX = tdata
-        self.levelLayers = []
-        self.levelLayers.append(trainX)
-        for shx in self.paramLayers:
-            lx = self.nonlin(np.dot(trainX, shx), deriv=False)
-            self.levelLayers.append(lx)
-            trainX = lx
-
-
-        lx_err = tlab - self.levelLayers[-1]
-        print "Error:[0]" + str(np.mean(np.abs(lx_err)))
-
-        #lx_err = None
-        self.deltaLayers = []
-        for (shx,shxs) in zip(self.levelLayers[::-1], self.paramLayers[::-1]):
-            lx_delta = lx_err*self.nonlin(shx, deriv=True)
-            lx_err = lx_delta.dot(shxs.T)
-            self.deltaLayers.append(lx_delta)
-
-            '''
-            if lx_err is None:
-                #lx_err = tlab - shx 
-                #print "Error:[0]" + str(np.mean(np.abs(lx_err)))
-                #print lx_err
-                lx_delta = lx_err*self.nonlin(shx, deriv=True)
-                self.deltaLayers.append(lx_delta)
-                lx_err = lx_delta.dot(shxs.T)
-                #lx_delta = lx_err*self.nonlin(shx, deriv=True)
-            else:
-
-                lx_delta = lx_err*self.nonlin(shx, deriv=True)
-                self.deltaLayers.append(lx_delta)
-                lx_err = lx_delta.dot(shxs.T)
-            '''
-
-        
-        #for((shx,shxs) in (self.deltaLayers[::-1], self.paramLayers[::-1])):
-        #print self.paramLayers
-        #for ikey in range(len(self.paramLayers)):
-        lx = self.levelLayers.pop()     
-        
-        for lx_delta in self.deltaLayers:
-            
-            lp = self.paramLayers.pop()     
-            lx = self.levelLayers.pop()     
-            
-            lp += lx.T.dot(lx_delta)
-            self.paramLayers.insert(0,lp)
-
         
             
 if __name__ == '__main__':
