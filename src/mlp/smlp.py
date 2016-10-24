@@ -30,7 +30,10 @@ class ActFun:
 
     def tanh(self, x=None, y=None, lerr=None, deriv=False):
         if(deriv==True):
-            return 1 - np.pow(x,2)
+            dx = 1 - pow(x,2)
+            dx = lerr * dx
+            dloss = dx.dot(y.T)
+            return dx,dloss
         return np.tanh(x)
 
 
@@ -69,18 +72,12 @@ class Smlp:
     outY = 1
     batch = 20
     epochs = 5000
+    alpa = 0.1
     
 
-    # example (1,8)
-    hideLayers = []
-    
     # example (8,3),(3,5),(5,9)
     inputLayer = []
 
-    # example (9,1)
-    # no softmax
-    outputLayer = []
-    
     # rand
     paramLayers = []
     
@@ -89,8 +86,6 @@ class Smlp:
 
     deltaLayers = []
     
-    actFunctions = [] 
-
     setConfig = []
 
     def __init__(self, inX=1, inY=1, outY=1, batch=20):
@@ -126,13 +121,6 @@ class Smlp:
             syns['act'] =  self.actObj.func(val['actFun'])
             #syns = np.random.random((shx[0],shx[1]))/np.sqrt(shx[0]) 
             self.paramLayers.append(syns)
-
-    
-    def printParam(self):
-        print('input:')
-        print self.inputLayer
-        #print('param')
-        #print self.paramLayers
 
     def mtrain(self, tdata, tlab):
         for i in range(self.epochs):
@@ -197,8 +185,8 @@ class Smlp:
             lx = self.levelLayers.pop()     
             
             ll = lx.T.dot(lx_delta)
-            lp['W'] += -1 * lx.T.dot(lx_delta)
-            lp['b'] += -1 * np.sum(lx_delta, axis=0)
+            lp['W'] += -self.alpa * lx.T.dot(lx_delta)
+            lp['b'] += -self.alpa * np.sum(lx_delta, axis=0)
             
             self.paramLayers.insert(0,lp)
     
@@ -206,18 +194,6 @@ class Smlp:
     def get_err(self, tdata, tlab, i):
         lx_err = tlab - self.levelLayers[-1]
         print "Error batch[%d] lost: %f"%(i , np.mean(np.abs(lx_err)))
-
-    def get_softmax_err(self, tdata, tlab, i):
-        probs = self.levelLayers[-1]
-        
-        tp = probs[range(probs.shape[0]), tlab.reshape(tlab.shape[0])]
-        corect_logprobs = -np.log(tp)
-        data_loss = np.sum(corect_logprobs)
-        # Add regulatization term to loss (optional)
-        #data_loss += Config.reg_lambda / 2 * (np.sum(np.square(W1)) + np.sum(np.square(W2)))
-        tloss = data_loss / tlab.shape[0] 
-
-        print "Error batch[%d] lost: %f"%(i , tloss)
 
     def predict(self, tdata):
         return self.train_forward(tdata)
@@ -238,31 +214,3 @@ class Smlp:
             
         print "Error batch[%d] lost: %f"%(i , lost)
         
-            
-if __name__ == '__main__':
-    print 'test'
-    obx = Smlp(10,3)
-    obx.setOut(1)
-    obx.addLayer(2,5)
-    obx.addLayer(5,7)
-    obx.addLayer(7,1)
-    obx.initLayer()
-    obx.printParam()
-
-    '''
-    X = np.array([[0,0,1],
-            [0,1,1],
-            [1,0,1],
-            [1,1,1]])
- 
-    y = np.array([[0],
-            [1],
-            [1],
-            [0]])
-    '''
-    dataX = genfromtxt('%s/smlp_data_x.csv'%mstone.data_path, delimiter=',')
-    dataY = genfromtxt('%s/smlp_data_y.csv'%mstone.data_path, delimiter=',')
-    dataY = dataY.reshape(dataY.shape[0],1)
-
-    obx.mtrain(dataX,dataY)
-                
