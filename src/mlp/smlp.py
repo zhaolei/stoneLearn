@@ -3,12 +3,8 @@
 
 TODO
 1. 输入检查
-2. 自动初始化
-3. batch 批量梯度 
-4. 自定义激活函数 ****
-5. 支持 输出层softmax 包括softmax误差 ****
-6. 单层自定义
-7. 增加单层偏置 b ****
+2. batch 批量梯度 
+3. 正则化
 '''
 
 import numpy as np
@@ -53,11 +49,9 @@ class ActFun:
         if deriv == True:
             lerr = lerr.reshape(lerr.shape[0])
             x[range(x.shape[0]), lerr.reshape(lerr.shape[0])] -= 1
-            #dx = x.dot(y.T)
             dx = x
 
             dloss = dx.dot(y.T)
-
             return dx,dloss
 
         exp_scores = np.exp(x)
@@ -88,20 +82,15 @@ class Smlp:
     
     setConfig = []
 
-    def __init__(self, inX=1, inY=1, outY=1, batch=20):
-        self.inX = inX
-        self.inY = inY
-        self.outY = outY
-        self.inputLayer.append((inX,inY))
+    def __init__(self, alpa=0.1, batch=20, epochs=5000):
         self.actObj = ActFun()
+        self.batch = batch
+        self.alpa = alpa
+        self.epochs = epochs
         
-    def addLayer(self, intX=1, intY=1, act='sigmod'):
-        #self.hideLayers.append((intX,intY))
-        #self.actFunctions.append(self.nonlinx)
-        #self.actFunctions.append(self.actObj.func(act))
-        #self.actDxFunctions.append(self.actObj.dx_func('dx_%s'%act))
+    def addLayer(self, intY=1, act='sigmod'):
         conf = {}
-        conf['x'] = intX
+        #conf['x'] = intX
         conf['y'] = intY
         conf['actFun'] = act 
         self.setConfig.append(conf)
@@ -111,18 +100,23 @@ class Smlp:
  
 
     '''参数初始化'''
-    def initLayer(self):
+    def initLayer(self, inX):
 
         #for shx in self.hideLayers :
+        initX = inX 
         for val in self.setConfig :
             syns = {}
-            syns['W'] = np.random.random((val['x'],val['y']))/np.sqrt(val['x']) 
+            #syns['W'] = np.random.random((val['x'],val['y']))/np.sqrt(val['x']) 
+            syns['W'] = np.random.random((initX,val['y']))/np.sqrt(initX) 
             syns['b'] = np.zeros((1,val['y'])) 
             syns['act'] =  self.actObj.func(val['actFun'])
             #syns = np.random.random((shx[0],shx[1]))/np.sqrt(shx[0]) 
             self.paramLayers.append(syns)
+            initX = val['y']
 
     def mtrain(self, tdata, tlab):
+        self.initLayer(tdata.shape[1])
+
         for i in range(self.epochs):
             j = 0
             while j+self.batch < len(tdata): 
@@ -152,15 +146,11 @@ class Smlp:
         self.levelLayers = []
         self.levelLayers.append(trainX)
         for shx in self.paramLayers:
-            #actX = self.actObj.getFun(shx['act'])
-            #lx = actF(np.dot(trainX, shx['W']) + shx['b'], deriv=False)
             lx = shx['act'](np.dot(trainX, shx['W']) + shx['b'], deriv=False)
-            #lx = actF(np.dot(trainX, shx['W']), deriv=False)
-            #lx = self.sigmod(np.dot(trainX, shx), deriv=False)
             self.levelLayers.append(lx)
             trainX = lx
 
-        return lx
+        return trainX 
 
 
     '''梯度计算'''
@@ -206,11 +196,11 @@ class Smlp:
         # Add regulatization term to loss (optional)
         #data_loss += Config.reg_lambda / 2 * (np.sum(np.square(W1)) + np.sum(np.square(W2)))
         tloss = data_loss / tlab.shape[0] 
-        return tloss
+        return tloss,tp.mean()
         
     def calculate(self, tdata, tlab, i):
         plab = self.predict(tdata)
-        lost = self.get_softmax_lost(plab, tlab) 
+        lost,tmean = self.get_softmax_lost(plab, tlab) 
             
-        print "Error batch[%d] lost: %f"%(i , lost)
+        print "Error batch[%d] lost: %f mean: %f"%(i , lost, tmean)
         
