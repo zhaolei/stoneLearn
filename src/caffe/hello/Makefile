@@ -13,10 +13,10 @@ LDFLAGS+=`pkg-config --libs opencv` -lglog -lboost_system -lboost_thread -lboost
 
 # Added for mxnet
 #export MXNET_ROOT=`pwd`/../../../../mxnet
-export MXNET_ROOT=/dk/cnn/caffe
+export CAFFE_ROOT=/ds/local/caffe/install
 
-CFLAGS+= -I$(MXNET_ROOT)/include 
-LDFLAGS+=$(MXNET_ROOT)/.build_release/lib/libcaffe.so
+CFLAGS+= -I$(CAFFE_ROOT)/include 
+LDFLAGS+=$(CAFFE_ROOT)/lib/libcaffe.so
 CC=g++
 
 #image-classification-predict: image-classification-predict.o
@@ -26,7 +26,7 @@ CC=g++
 #	g++ -O3 -c image-classification-predict.cc ${CFLAGS}
 	
 all:
-	g++ -W hello.cc  $(CFLAGS)  $(LDFLAGS) -o hello 
+	g++ -W hello.cc $(LDFLAGS) $(CFLAGS)   -o hello 
 clean: 
 	rm image-classification-predict
 	rm -f *.d *.o
@@ -35,5 +35,3 @@ clean:
 	echo [CC] $<
 	g++ -W $<  $(CFLAGS)  $(LDFLAGS) -o $@
 
-lint:
-	python ../../../dmlc-core/scripts/lint.py mxnet "cpp" ./
