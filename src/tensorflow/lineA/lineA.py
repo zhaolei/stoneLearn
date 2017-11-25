@@ -48,6 +48,7 @@ optimizer = tf.train.AdamOptimizer(learning_rate).minimize(cost)
 # 初始化所有变量
 init = tf.initialize_all_variables()
 
+print("************Start***********")
 # 训练开始
 with tf.Session() as sess:
     sess.run(init)

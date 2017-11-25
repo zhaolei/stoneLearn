@@ -1,6 +1,6 @@
 import numpy as np
 from numpy import genfromtxt
-import mstone
+#import mstone
  
 def nonlin(x,deriv=False):
     if(deriv==True):
@@ -46,9 +46,9 @@ print 'syn1.shape %d' , syn1.shape
 print 'X.shape %d' , dataX.shape
 print 'Y.shape %d' , dataY.shape
 
-alps = 0.005
+alps = 0.05
 lview = []
-for j in xrange(10000):
+for j in xrange(40000):
  
     # Feed forward through layers 0, 1, and 2
     l0 = dataX
@@ -60,7 +60,7 @@ for j in xrange(10000):
     #l2_error = y - l2
     l3_error = dataY -  l3
  
-    if (j% 50) == 0:
+    if (j% 100) == 0:
         #print "Error:" + str(np.mean(np.abs(l2_error)))
         print "Error:[" + str(j) + "]" + str(np.mean(np.abs(l3_error)))
         #print 'syn0',syn0

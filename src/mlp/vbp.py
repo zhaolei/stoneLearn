@@ -1,15 +1,25 @@
 import numpy as np
+from numpy import genfromtxt
 
 
-X = np.linspace(1,100,100)
-X = X.reshape(100,1)
+#X = np.linspace(1,100,100)
+#X = X.reshape(100,1)
+
+data_path = '/ds/datas/'
+X = genfromtxt('%s/smlp_data_x.csv'%data_path, delimiter=',')
+Y = genfromtxt('%s/smlp_data_y.csv'%data_path, delimiter=',', dtype=int)
+Y = Y.reshape(Y.shape[0],1)
+
+
+                
 
 #Y = np.sin(X)
-Y = X*0.5 + 0.5
+#Y = X*0.5 + 0.5
 print(Y.shape)
 print(X.shape)
 
-W11 = np.random.random([1,5])
+
+W11 = np.random.random([2,5])
 b11 = np.random.random([5])
 #W11 = np.zeros([1,2])
 #b11 = np.zeros([2])
@@ -17,7 +27,7 @@ b11 = np.random.random([5])
 W21 = np.random.random([5,1])
 b21 = np.random.random([1])
 
-for n in range(500):
+for n in range(10):
     dn0 = X.dot(W11) + b11
     adn0 = 1/(1+np.exp(-dn0))
 
@@ -27,12 +37,13 @@ for n in range(500):
     dn1 = dn0.dot(W21) + b21
     adn1 = 1/(1+np.exp(-dn1))
 
-    #losx = Y*np.log(adn1) + (1-Y)*np.log(1-adn1)
-    print(adn1.tolist().count(1.))
-    losx = (1-Y)*np.log(1-adn1) 
+    losx = Y*np.log(adn1) + (1-Y)*np.log(1-adn1)
+    #print(adn1.tolist().count(1.))
+    #losx = (1-Y)*np.log(1-adn1) 
 
 
     errs = np.average(Y-adn1)
+    print(adn1.shape)
     W21 = W21 -(W21*(errs)*0.001)
     b21 = b21 -(b21*(errs)*0.001)
 

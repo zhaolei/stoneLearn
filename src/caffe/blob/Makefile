@@ -12,5 +12,8 @@ CC=g++
 
 all:main.cpp
 	$(CC) -o blob main.cpp $(LDFLAGS) $(CFLAGS)  
+blobt:blobt.cpp
+	$(CC) -o blobt blobt.cpp $(LDFLAGS) $(CFLAGS)  
+	
 clean:
 	rm blob

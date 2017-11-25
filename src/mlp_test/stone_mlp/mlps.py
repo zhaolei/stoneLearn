@@ -1,6 +1,6 @@
 import numpy as np
 from numpy import genfromtxt
-import mstone
+#import mstone
  
 def nonlin(x,deriv=False):
     if(deriv==True):
@@ -10,8 +10,8 @@ def nonlin(x,deriv=False):
 
 
 
-dataX = genfromtxt('%s/smlp_data_x.csv'%mstone.data_path, delimiter=',')
-dataY = genfromtxt('%s/smlp_data_y.csv'%mstone.data_path, delimiter=',')
+dataX = genfromtxt('%s/smlp_data_x.csv'%'/ds/datas/', delimiter=',')
+dataY = genfromtxt('%s/smlp_data_y.csv'%'/ds/datas/', delimiter=',')
 dataY = dataY.reshape(dataY.shape[0],1)
 print dataY
 
@@ -57,7 +57,7 @@ for j in xrange(10000):
     #l2_error = y - l2
     l3_error = dataY -  l3
  
-    if (j% 50) == 0:
+    if (j% 2) == 0:
         #print "Error:" + str(np.mean(np.abs(l2_error)))
         print "Error:[" + str(j) + "]" + str(np.mean(np.abs(l3_error)))
         #print 'syn0',syn0
@@ -85,10 +85,6 @@ for j in xrange(10000):
     l1_delta = l1_error * alps * nonlin(l1,deriv=True)
 
  
-    print l2.shape
-    print l3_delta.shape
-    print syn2.shape
-    exit()
     syn2 += l2.T.dot(l3_delta)
     syn1 += l1.T.dot(l2_delta)
     syn0 += l0.T.dot(l1_delta)
