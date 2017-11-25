@@ -6,62 +6,62 @@ from keras.optimizers import SGD
 import keras
 import time
 import numpy as np
+import pymysql
+import datetime
 
 from sklearn import metrics
 
-fh = pd.read_pickle('bidu.d')
-alld = fh.values
+wd = datetime.date.today().weekday()
 
-#'Open', 'High', 'Low', 'Close', 'Volume',
-print(fh.columns)
-print(alld.shape)
+db = pymysql.connect("localhost","root","root","stone" )
+cursor = db.cursor()
 
-Y = alld[:,3] - alld[:,0]
-Y = Y.reshape(Y.shape[0],1)
-Y[Y>0.] = 1
-Y[Y<=0.] = 0 
-Y = Y[4:]
+def Xd(alld):
+    maxdd = np.max(alld[:,(0,1,2,3)])
+    maxvv = np.max(alld[:,4])
+
+    X = []
+    tmx = []
+    for i in range(alld.shape[0]):
+        s = np.array([])
+        s = np.append(s, alld[i,2]/maxdd) 
+        s = np.append(s, (alld[i,1] - alld[i,2])/maxdd) 
+        s = np.append(s, (alld[i,0] - alld[i,3])/maxdd) 
+        s = np.append(s, alld[i,4]/maxvv)
+
+        tmx.append(s)
+        if i > 2:
+            X.append(tmx[-4:])
+            tmx = tmx[-4:]
+
+    X = X[:-1]
+    X = np.array(X)
+    X = X.reshape(X.shape[0],1, 16)
+    return X
+
+def getDb(cc):
+    dsql = "select open,high,low,close,num from stock where name='%s' order by datex asc"%cc
+    cursor.execute(dsql)
+    results = cursor.fetchall()
+    hd = np.array(results,dtype='float') 
+    return hd
+    
+allx = 'AAPL,ADBE,AMZN,ATVI,BIDU,EA,IBKR,INTC,KO,MKC,MSFT,MU,NFLX,NKE,NVDA,ORCL,SBUX,WMT,FB'
+alls = allx.split(',')
+#print(fh.columns)
 
 #Y = keras.utils.to_categorical(Y, num_classes=2)
-
-maxdd = np.max(alld[:,(0,1,2,3)])
-maxvv = np.max(alld[:,4])
-
-X = []
-tmx = []
-for i in range(alld.shape[0]):
-    s = np.array([])
-    s = np.append(s, alld[i,2]/maxdd) 
-    s = np.append(s, (alld[i,1] - alld[i,2])/maxdd) 
-    s = np.append(s, (alld[i,0] - alld[i,3])/maxdd) 
-    s = np.append(s, alld[i,4]/maxvv)
-
-    tmx.append(s)
-    if i > 2:
-        X.append(tmx[-4:])
-        tmx = tmx[-4:]
-
-X = X[:-1]
-X = np.array(X)
-print(X.shape)
 #X1 = X[:,:,(0,1,1)] - X[:,:,(2,3,0)]
 #print(X[:,:,4].reshape(X[:,:,4].shape[0],1,1))
 #X1 = np.column_stack((X1, X[:,:,4].reshape(X[:,:,4].shape[0],1,1)))
 #print(X1.shape)
 #print(X1[0])
-X = X.reshape(X.shape[0],1, 16)
-print(len(Y))
-print(len(X))
-print(Y.shape)
-print(X.shape)
-print(Y[0].shape)
-print(X[0].shape)
+
 
 #for i in range(60):
 #    X[:,:,i] = (X[:,:,i] - X[:,:,i].min() )/ (X[:,:,i].max() - X[:,:,i].min())
 
 
-#exit()
 def build_model(layers):
     model = Sequential()
 
@@ -122,17 +122,29 @@ def build_model(layers):
 
 
 model = build_model([16, 512,4, 1])
-model.fit(X[:-40],
-        Y[:-40],
-        validation_data=(X[-100:-80],Y[-100:-80]),
+
+for c in alls:
+    alld = getDb(c)
+    #ppt = '/ds/datas/stock/%s'%c
+    #fh = pd.read_pickle(ppt)
+    #alld = fh.values
+    Y = alld[:,3] - alld[:,0]
+    Y = Y.reshape(Y.shape[0],1)
+    Y[Y>0.] = 1
+    Y[Y<=0.] = 0 
+    Y = Y[4:]
+
+    X = Xd(alld)
+    model.fit(X,
+        Y,
+        validation_data=(X[-20:],Y[-20:]),
         batch_size=100,
-        epochs=5000)
+        epochs=4000)
 
-#model.save('/ds/model/stock/bidux.h5')
-yp = model.predict(X[-80:])
+    model.save('/ds/model/stock/ls_%s_%d.h5'%(c, wd))
+    yp = model.predict(X[-20:])
+    yp[yp>=0.5] = 1.
+    yp[yp<0.5] = 0. 
+    print(yp.reshape(1,20).tolist())
+    print(Y[-20:].reshape(1,20).tolist())
 
-yp[yp>=0.5] = 1.
-yp[yp<0.5] = 0. 
-
-score = metrics.roc_auc_score(Y[-80:], yp)
-print(score)

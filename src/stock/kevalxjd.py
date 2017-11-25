@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import tensorflow as tf
+import sys
 
 from tensorflow.contrib import learn
 from sklearn.metrics import mean_squared_error
@@ -11,25 +12,29 @@ from stockd import get_data, get_local_data
 import logging
 logging.basicConfig(level=logging.DEBUG)
 
+if len(sys.argv) < 2:
+    print('No code')
+    exit()
 
-xcode = 'DD'
+xcode = sys.argv[1]
 tdata = get_local_data(xcode)
 
 nday = 1 
-fsdata = tdata.values[:-nday]
+
+odata = tdata.values[:,(0,1,2,4,6,7,8,9,10,11)]
+oxdata = tdata.values[:,3]
+
+fsdata = odata[:-nday]
 #fsdata = tdata.values
 #guiyi
-print(fsdata[:, 1])
 for i in range(fsdata.shape[1]):
     ksum = np.sqrt(sum(pow(fsdata[:,i],2)))
     print(" %d %d"%(i, ksum))
     fsdata[:,i] /= (ksum*1.0)
 
-print(fsdata[:, 1])
-print(max(fsdata[:, 1]))
 
-xtrain = int((tdata.values.shape[0] / 10) * 7)
-xtest = int((tdata.values.shape[0] / 10) * 2)
+xtrain = int((oxdata.shape[0] / 10) * 8)
+xtest = int((oxdata.shape[0] / 10) * 1)
 
 print(fsdata.shape)
 print(xtrain)
@@ -37,8 +42,8 @@ print(xtest)
 
 xdata = {}
 xdata['train'] = fsdata[:xtrain]
-xdata['test'] = fsdata[xtrain:xtrain + xtest]
-xdata['val'] = fsdata[xtrain+xtest:]
+xdata['val'] = fsdata[xtrain:xtrain + xtest]
+xdata['test'] = fsdata[xtrain+xtest:]
     
 ydata = {}
 fclose = [w for w in tdata.Close]
@@ -48,8 +53,8 @@ fclose = fclose[nday:]
 print(fsdata.shape)
 print(fclose.shape)
 ydata['train'] = fclose[:xtrain]
-ydata['test'] = fclose[xtrain:xtrain+xtest]
-ydata['val'] = fclose[xtrain + xtest:]
+ydata['val'] = fclose[xtrain:xtrain+xtest]
+ydata['test'] = fclose[xtrain + xtest:]
 
 print(xdata['train'].shape)
 xdata['train'] = xdata['train'].reshape(xdata['train'].shape[0],1,xdata['train'].shape[1])
@@ -69,15 +74,15 @@ ydata['val'] = ydata['val'].astype(np.float32)
 print(xdata['train'][0][0])
 print(ydata['train'][0])
 
-model = build_model([12, 256,128, 1])
+model = build_model([10, 256,128, 1])
 model.fit(
     xdata['train'], 
     ydata['train'],
-    batch_size=320,
-    nb_epoch=200,
+    batch_size=180,
+    nb_epoch=20000,
     validation_data=(xdata['val'],ydata['val']))
 
-model.save('/ds/model/stock/jd01.h5')  # creates a HDF5 file 'my_model.h5'
+model.save('/ds/model/stock/%s.h5'%xcode)  # creates a HDF5 file 'my_model.h5'
 
 # returns a compiled model
 # identical to the previous one

@@ -27,12 +27,24 @@ def build_model(layers):
 
     model.add(LSTM(
         input_dim=layers[2],
-        output_dim=128,
+        output_dim=256,
         return_sequences=True))
     model.add(Dropout(0.1))
 
     model.add(LSTM(
-        128,
+        input_dim=256,
+        output_dim=512,
+        return_sequences=True))
+    model.add(Dropout(0.1))
+
+    model.add(LSTM(
+        input_dim=512,
+        output_dim=512,
+        return_sequences=True))
+    model.add(Dropout(0.1))
+
+    model.add(LSTM(
+        512,
         return_sequences=False))
     model.add(Dropout(0.1))
 
@@ -44,7 +56,6 @@ def build_model(layers):
     model.compile(loss="mse", optimizer="rmsprop")
     print("> Compilation Time : ", time.time() - start)
     return model
-
 
 '''
 x1 = np.linspace(1,100,1000)
