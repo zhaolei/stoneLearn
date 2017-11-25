@@ -10,7 +10,7 @@ from numpy import genfromtxt
 #X = X.reshape(100,1)
 
 X = np.array([[1]]) 
-Y = np.array([1.])
+Y = np.array([0.])
 
 
 '''第一层5个神经元'''
@@ -21,7 +21,7 @@ b11 = np.random.random([1,5])
 W21 = np.random.random([5,1])
 b21 = np.random.random([1,1])
 
-for n in range(10000):
+for n in range(1000):
     #print('-------train---------')
 
     # 第一层前向计算
@@ -48,20 +48,24 @@ for n in range(10000):
     # 输出层误差
     losx = np.power(Y - adn1,2)
 
-    #print(losx)
-    #print(adn1.tolist().count(1.))
-    #losx = (1-Y)*np.log(1-adn1) 
-
     # 输出误差函数导数
-    dt = adn1 - Y
+    dt = Y - adn1 
+
+    delta = dt * dt1
+    da = adn0.T.dot(delta)
 
     #反向梯度梯度下降
-    W21 = W21 - W21 * dt * dt1 * 0.1 
-    b21 = b21 - b21 * dt * dt1 * 0.1 
+    W21 = W21 + da * 0.1 
+    b21 = b21 + delta * 0.1 
+
+    error0 = delta.dot(W21.T)
+    delta0 = error0 * dt0
+
+    da0 = X.T.dot(delta0)
 
     #反向梯度梯度下降
-    W11 = W11 - W11 * dt * dt1 * dt0 * 0.1 
-    b11 = b11 - b11 * dt * dt1 * dt0 * 0.1 
+    W11 = W11 + da0 * 0.1 
+    b11 = b11 + delta0 * 0.1 
 
     
     #print((Y-adn1)[0:10])
