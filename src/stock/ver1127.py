@@ -1,8 +1,9 @@
 '''
- 归一化问题
-在拆分 训练集和 验证集的之前 做了 归一化 使用了未来的数据 包括未来时间段的最大或者最小
-
-状态: 放弃版本
+修正拆分之前 归一化 使用未来数据问题
+数据来源 数据库 mysql
+keras api更新到最新
+日期: 2017-11-27
+状态: 
 
 '''
 import pandas as pd
@@ -17,6 +18,9 @@ import pymysql
 import datetime
 
 from sklearn import metrics
+from sklearn.preprocessing import MinMaxScaler
+
+scaler = MinMaxScaler()
 
 wd = datetime.date.today().weekday()
 
@@ -70,29 +74,15 @@ def build_model(layers):
     model = Sequential()
 
     model.add(LSTM(
-        input_dim=layers[0],
-        output_dim=layers[1],
+        input_shape = (None,layers[0]),
+        units=layers[1],
         return_sequences=True))
     model.add(Dropout(0.4))
 
 
     model.add(LSTM(
-        input_dim=layers[1],
-        output_dim=1024,
-        return_sequences=True))
-    model.add(Dropout(0.4))
-
-    model.add(LSTM(
-        1024,
-        return_sequences=False))
-    model.add(Dropout(0.4))
-
-    '''
-
-
-    model.add(LSTM(
-        input_dim=1024,
-        output_dim=1024,
+        input_shape = (layers[1], 1024),
+        units=1024,
         return_sequences=True))
     model.add(Dropout(0.4))
 
@@ -101,27 +91,14 @@ def build_model(layers):
         return_sequences=False))
     model.add(Dropout(0.4))
 
+
     model.add(Dense(
-        output_dim=layers[3]))
-    model.add(Activation("linear"))
-    '''
-
-    '''
-    model.add(Dense(2, activation='softmax'))
-
-    sgd = SGD(lr=0.002, decay=1e-6, momentum=0.9, nesterov=True)
-    model.compile(loss='categorical_crossentropy',
-              optimizer=sgd,
-              #optimizer="rmsprop",
-              metrics=['accuracy'])
-
-    '''
-    model.add(Dense(
-        output_dim=layers[3]))
+        units=layers[3]))
     model.add(Activation("linear"))
     start = time.time()
     model.compile(loss="mse", optimizer="rmsprop",metrics=['accuracy'])
     print("> Compilation Time : ", time.time() - start)
+    
     return model
 
 
@@ -129,16 +106,6 @@ model = build_model([16, 512,4, 1])
 
 for c in alls:
     alld = getDb(c)
-    #ppt = '/ds/datas/stock/%s'%c
-    #fh = pd.read_pickle(ppt)
-    #alld = fh.values
-    '''
-    Y = alld[:,3] - alld[:,0]
-    Y = Y.reshape(Y.shape[0],1)
-    Y[Y>0.] = 1
-    Y[Y<=0.] = 0 
-    Y = Y[4:]
-    '''
 
     X,Y = Xd(alld)
     model.fit(X,

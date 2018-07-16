@@ -7,6 +7,7 @@ import quandl
 import pandas as pd
 import json
 import urllib.request
+import requests
 
 quandl.ApiConfig.api_key = "GRFAUD2HY43XdKsfj8Az"
 
@@ -30,7 +31,7 @@ db = pymysql.connect("localhost","root","root","stone" )
 cursor = db.cursor()
  
 
-allx = 'AAPL,ADBE,AMZN,ATVI,BIDU,EA,IBKR,INTC,KO,MKC,MSFT,MU,NFLX,NKE,NVDA,ORCL,SBUX,WMT,FB,JD,BABA,TSLA,GPRO,ABT,PG'
+allx = 'QQQ'
 #allx = 'AAPL'
 alls = allx.split(',')
 
@@ -62,9 +63,13 @@ for bb in alls:
 
         '''
         url = "https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&outputsize=full&symbol=%s&apikey=10VRJP4Q0FNDKQ8G"%bb
+        '''
         f = urllib.request.urlopen(url)
         strc = f.read()
         data = json.loads(strc)
+        '''
+        dat = requests.get(url)
+        data = dat.json()
         
         dlist = data["Time Series (Daily)"]; 
         for dr in dlist:

@@ -15,13 +15,16 @@ import time
 import numpy as np
 import pymysql
 import datetime
+from keras.models import load_model
+
+import db.base
 
 from sklearn import metrics
 
 wd = datetime.date.today().weekday()
 
-db = pymysql.connect("localhost","root","root","stone" )
-cursor = db.cursor()
+#db = pymysql.connect("localhost","root","root","stone" )
+#cursor = db.cursor()
 
 def Xd(alld, day=4):
     maxdd = np.max(alld[:,(0,1,2,3)])
@@ -38,6 +41,7 @@ def Xd(alld, day=4):
         s = np.append(s, alld[i,4]/maxvv)
 
         tmx.append(s)
+
         if i >= day:
             X.append(tmx[:4])
             j = alld[i,3] - alld[i,0]
@@ -54,31 +58,35 @@ def Xd(alld, day=4):
     Y = np.array(Y)
     Y = Y.reshape(Y.shape[0],1)
 
-    return X,Y
+    lt = np.array(tmx)
+    lt = lt.reshape(1,1,16)
+
+    return X,Y,lt
 
 def getDb(cc):
     dsql = "select open,high,low,close,num from stock where name='%s' order by datex asc"%cc
-    cursor.execute(dsql)
-    results = cursor.fetchall()
+    db.base.cursor.execute(dsql)
+    results = db.base.cursor.fetchall()
     hd = np.array(results,dtype='float') 
     return hd
     
-allx = 'AAPL,ADBE,AMZN,ATVI,BIDU,EA,IBKR,INTC,KO,MKC,MSFT,MU,NFLX,NKE,NVDA,ORCL,SBUX,WMT,FB'
-alls = allx.split(',')
+#allx = 'AAPL,ADBE,AMZN,ATVI,BIDU,EA,IBKR,INTC,KO,MKC,MSFT,MU,NFLX,NKE,NVDA,ORCL,SBUX,WMT,FB'
+#alls = allx.split(',')
+alls = db.base.getList()
 
 def build_model(layers):
     model = Sequential()
 
     model.add(LSTM(
-        input_dim=layers[0],
-        output_dim=layers[1],
+        input_shape = (None,layers[0]),
+        units=layers[1],
         return_sequences=True))
     model.add(Dropout(0.4))
 
 
     model.add(LSTM(
-        input_dim=layers[1],
-        output_dim=1024,
+        input_shape = (layers[1], 1024),
+        units=1024,
         return_sequences=True))
     model.add(Dropout(0.4))
 
@@ -117,7 +125,7 @@ def build_model(layers):
 
     '''
     model.add(Dense(
-        output_dim=layers[3]))
+        units=layers[3]))
     model.add(Activation("linear"))
     start = time.time()
     model.compile(loss="mse", optimizer="rmsprop",metrics=['accuracy'])
@@ -125,13 +133,16 @@ def build_model(layers):
     return model
 
 
-model = build_model([16, 512,4, 1])
+#model = build_model([16, 512,4, 1])
 
+epx = 0
 for c in alls:
+    epx += 1
+    eps = 6000    
+    if epx > 1:
+        eps = 1000
+
     alld = getDb(c)
-    #ppt = '/ds/datas/stock/%s'%c
-    #fh = pd.read_pickle(ppt)
-    #alld = fh.values
     '''
     Y = alld[:,3] - alld[:,0]
     Y = Y.reshape(Y.shape[0],1)
@@ -140,17 +151,25 @@ for c in alls:
     Y = Y[4:]
     '''
 
-    X,Y = Xd(alld)
-    model.fit(X,
-        Y,
-        validation_data=(X[-20:],Y[-20:]),
-        batch_size=100,
-        epochs=6000)
+    n = 3
+    model = load_model('/ds/model/stock/ls_%s_%d_d12.h5'%(c,n))
 
-    model.save('/ds/model/stock/ls_%s_%d.h5'%(c, wd))
+    X,Y,lt = Xd(alld)
+
+    #model.save('/ds/model/stock/ls_%s_%d_d12.h5'%(c, wd))
     yp = model.predict(X[-20:])
     yp[yp>=0.5] = 1.
     yp[yp<0.5] = 0. 
-    print(yp.reshape(1,20).tolist())
-    print(Y[-20:].reshape(1,20).tolist())
+    pp = yp.reshape(-1,).tolist()
+    vpp = Y[-20:].reshape(-1,).tolist()
+    jtp = yp - Y[-20:] 
+    jtp[jtp<0.0] = 1
+    jpp = jtp.reshape(-1,).tolist()
+    print('code : %s'%c, file=open('1214x.log','a'))
+    print(pp, file=open('1214x.log','a'))
+    print(vpp, file=open('1214x.log','a'))
+    print('error: %d'%sum(jpp), file=open('1214x.log','a'))
+    rt = model.predict(lt)
+    print("debug***********", file=open('1214x.log','a'))
+    print(rt, file=open('1214x.log','a'))
 

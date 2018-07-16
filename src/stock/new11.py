@@ -1,10 +1,3 @@
-'''
- 归一化问题
-在拆分 训练集和 验证集的之前 做了 归一化 使用了未来的数据 包括未来时间段的最大或者最小
-
-状态: 放弃版本
-
-'''
 import pandas as pd
 from keras.layers.core import Dense, Activation, Dropout
 from keras.layers.recurrent import LSTM
@@ -42,18 +35,15 @@ def Xd(alld, day=4):
             X.append(tmx[:4])
             j = alld[i,3] - alld[i,0]
             if j > 0:
-                Y.append(1.)
+                Y.append(1)
             else:
-                Y.append(0.)
+                Y.append(0)
             tmx = tmx[1:]
 
-    #X.append(tmx)
     X = np.array(X)
     X = X.reshape(X.shape[0],1, 16)
-
     Y = np.array(Y)
     Y = Y.reshape(Y.shape[0],1)
-
     return X,Y
 
 def getDb(cc):
@@ -65,6 +55,38 @@ def getDb(cc):
     
 allx = 'AAPL,ADBE,AMZN,ATVI,BIDU,EA,IBKR,INTC,KO,MKC,MSFT,MU,NFLX,NKE,NVDA,ORCL,SBUX,WMT,FB'
 alls = allx.split(',')
+#stls = '''AAPL  ADBE  AMZN  ATVI  BIDU  EA  IBKR  INTC  KO  MKC  MSFT  MU  NFLX  NKE  NVDA  ORCL  SBUX  WMT'''
+    #Ys.append(Y)
+    #Xs.append(Xd(alld))
+
+
+#fh = pd.read_pickle('bidu.d')
+#alld = fh.values
+
+#'Open', 'High', 'Low', 'Close', 'Volume',
+#print(fh.columns)
+#print(alld.shape)
+
+'''
+Y = alld[:,3] - alld[:,0]
+Y = Y.reshape(Y.shape[0],1)
+Y[Y>0.] = 1
+Y[Y<=0.] = 0 
+Y = Y[5:]
+'''
+
+#Y = keras.utils.to_categorical(Y, num_classes=2)
+
+#X1 = X[:,:,(0,1,1)] - X[:,:,(2,3,0)]
+#print(X[:,:,4].reshape(X[:,:,4].shape[0],1,1))
+#X1 = np.column_stack((X1, X[:,:,4].reshape(X[:,:,4].shape[0],1,1)))
+#print(X1.shape)
+#print(X1[0])
+
+
+#for i in range(60):
+#    X[:,:,i] = (X[:,:,i] - X[:,:,i].min() )/ (X[:,:,i].max() - X[:,:,i].min())
+
 
 def build_model(layers):
     model = Sequential()
@@ -132,20 +154,16 @@ for c in alls:
     #ppt = '/ds/datas/stock/%s'%c
     #fh = pd.read_pickle(ppt)
     #alld = fh.values
-    '''
-    Y = alld[:,3] - alld[:,0]
-    Y = Y.reshape(Y.shape[0],1)
-    Y[Y>0.] = 1
-    Y[Y<=0.] = 0 
-    Y = Y[4:]
-    '''
 
     X,Y = Xd(alld)
+    print(X.shape)
+    print(Y.shape)
+
     model.fit(X,
         Y,
         validation_data=(X[-20:],Y[-20:]),
         batch_size=100,
-        epochs=6000)
+        epochs=4000)
 
     model.save('/ds/model/stock/ls_%s_%d.h5'%(c, wd))
     yp = model.predict(X[-20:])
